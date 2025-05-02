@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Semantic Grader{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt me-2"></i>Teacher Dashboard</h2>
+        <p class="lead">Welcome, {{ current_user.username }}! Manage your question papers and student evaluations.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Question Papers</h5>
+                        <h2 class="mb-0">{{ question_papers|length }}</h2>
+                    </div>
+                    <i class="fas fa-file-alt fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer d-grid">
+                <a href="{{ url_for('upload_questions') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add New
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Students</h5>
+                        <h2 class="mb-0">{{ student_count }}</h2>
+                    </div>
+                    <i class="fas fa-user-graduate fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer d-grid">
+                <a href="{{ url_for('students') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-plus me-1"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Evaluations</h5>
+                        <h2 class="mb-0">{{ evaluation_count }}</h2>
+                    </div>
+                    <i class="fas fa-check-square fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer d-grid">
+                <a href="{{ url_for('evaluation') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-plus me-1"></i> New Evaluation
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Results</h5>
+                        <h2 class="mb-0"><i class="fas fa-chart-line"></i></h2>
+                    </div>
+                    <i class="fas fa-chart-bar fa-3x"></i>
+                </div>
+            </div>
+            <div class="card-footer d-grid">
+                <a href="{{ url_for('results') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-eye me-1"></i> View Results
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Your Question Papers</h5>
+            </div>
+            <div class="card-body">
+                {% if question_papers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Total Marks</th>
+                                <th>Created On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paper in question_papers %}
+                            <tr>
+                                <td>{{ paper.title }}</td>
+                                <td>{{ paper.total_marks }}</td>
+                                <td>{{ paper.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <a href="{{ url_for('download_file', file_type='question', id=paper.id) }}" class="btn btn-sm btn-outline-primary" title="Download Question Paper">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <a href="{{ url_for('download_file', file_type='model_answer', id=paper.id) }}" class="btn btn-sm btn-outline-success" title="Download Model Answer">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    <a href="{{ url_for('evaluation') }}?question_paper_id={{ paper.id }}" class="btn btn-sm btn-outline-info" title="Evaluate">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-file-upload fa-4x text-muted"></i>
+                    </div>
+                    <p>You haven't uploaded any question papers yet.</p>
+                    <a href="{{ url_for('upload_questions') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Upload Question Paper
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Recent Evaluations</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_evaluations %}
+                <div class="list-group">
+                    {% for evaluation in recent_evaluations %}
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ evaluation.student.name }}</h6>
+                            <small>{{ evaluation.evaluated_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <p class="mb-1">{{ evaluation.question_paper.title }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Score: {{ evaluation.marks_obtained }}/{{ evaluation.question_paper.total_marks }} ({{ evaluation.percentage|round(1) }}%)</small>
+                            <a href="{{ url_for('download_file', file_type='student_answer', id=evaluation.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-download"></i> Answer
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-clipboard-check fa-4x text-muted"></i>
+                    </div>
+                    <p>No evaluations yet.</p>
+                    <a href="{{ url_for('evaluation') }}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> Start Evaluation
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% if recent_evaluations %}
+            <div class="card-footer text-center">
+                <a href="{{ url_for('results') }}" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-list me-1"></i> View All Results
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

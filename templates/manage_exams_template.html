@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Exams - Semantic Grader{% endblock %}
+
+{% block additional_css %}
+<style>
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table th {
+        background-color: #3498db;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: #dceefb;
+    }
+    
+    .btn-action {
+        margin: 0 3px;
+    }
+    
+    .btn-start {
+        background: #27ae60;
+        border-color: #27ae60;
+    }
+    
+    .btn-start:hover {
+        background: #2ecc71;
+        border-color: #2ecc71;
+    }
+    
+    .btn-stop {
+        background: #e74c3c;
+        border-color: #e74c3c;
+    }
+    
+    .btn-stop:hover {
+        background: #c0392b;
+        border-color: #c0392b;
+    }
+    
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-clipboard-list me-2"></i>Manage Exams</h2>
+        <p class="text-muted">View, control, and manage your created exams.</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('create_question_paper') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create New Exam
+        </a>
+    </div>
+</div>
+
+{% if exams %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Your Exams</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Exam Type</th>
+                        <th>Course</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in exams %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ exam.exam_type }}</td>
+                        <td>{{ exam.course_name }} <small class="text-muted">({{ exam.course_code }})</small></td>
+                        <td>{{ exam.exam_date.strftime('%d-%m-%Y') if exam.exam_date else 'Not set' }}</td>
+                        <td>
+                            {% if exam.is_visible %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('download_question_paper', exam_id=exam.id) }}" class="btn btn-sm btn-info btn-action">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                
+                                {% if not exam.is_visible %}
+                                <form method="post" action="{{ url_for('toggle_exam_visibility', exam_id=exam.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success btn-action btn-start" title="Start Exam">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="{{ url_for('toggle_exam_visibility_off', exam_id=exam.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger btn-action btn-stop" title="Stop Exam">
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                                <form method="post" action="{{ url_for('delete_exam', exam_id=exam.id) }}" class="d-inline" 
+                                      onsubmit="return confirm('Are you sure you want to delete this exam? This action cannot be undone.')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-action" title="Delete Exam">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-clipboard"></i>
+    <h4>No Exams Created Yet</h4>
+    <p class="text-muted">You haven't created any exams. Click the button below to create your first exam.</p>
+    <a href="{{ url_for('create_question_paper') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-plus me-2"></i>Create Question Paper
+    </a>
+</div>
+{% endif %}
+{% endblock %}

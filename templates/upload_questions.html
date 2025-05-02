@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Questions - Semantic Grader{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-file-upload me-2"></i>Upload Question Paper</h2>
+        <p class="lead">Upload a question paper with model answers for automated grading.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Question Paper Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                        <div class="form-text">Enter a descriptive title for the question paper.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <div class="form-text">Provide additional details about the question paper (optional).</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="question_file" class="form-label">Question Paper (PDF)</label>
+                        <input type="file" class="form-control" id="question_file" name="question_file" accept=".pdf" required>
+                        <div class="form-text">Upload the question paper in PDF format.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="model_answer_file" class="form-label">Model Answer Sheet (PDF)</label>
+                        <input type="file" class="form-control" id="model_answer_file" name="model_answer_file" accept=".pdf" required>
+                        <div class="form-text">
+                            Upload the model answer sheet in PDF format. The format should be:<br>
+                            <code>Question 1: [question text]</code><br>
+                            <code>Model Answer: [model answer text]</code><br>
+                            <code>Max Marks: [max marks]</code>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Format Requirements</h6>
+                        <p class="mb-0">The model answer PDF should follow this format for each question:</p>
+                        <ul class="mb-0">
+                            <li><strong>Question N:</strong> [question text]</li>
+                            <li><strong>Model Answer:</strong> [model answer text]</li>
+                            <li><strong>Max Marks:</strong> [maximum marks]</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload Question Paper
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

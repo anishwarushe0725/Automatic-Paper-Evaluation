@@ -1,0 +1,24 @@
+semantic_grader_project/
+├── app.py                  # Main Flask application
+├── config.py               # Configuration settings
+├── requirements.txt        # Project dependencies
+├── semantic_grader/        # Your grading module
+│   └── __init__.py
+│   └── grader.py           # The semantic grader code
+├── static/                 # Static files (CSS, JS)
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── script.js
+├── templates/              # HTML templates
+│   ├── base.html
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── upload_questions.html
+│   ├── students.html
+│   ├── evaluation.html
+│   └── results.html
+└── uploads/                # Directory to store uploaded files
+    ├── question_papers/
+    ├── model_answers/
+    └── student_answers/

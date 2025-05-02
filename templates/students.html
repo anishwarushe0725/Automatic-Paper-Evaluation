@@ -1,0 +1,187 @@
+```html
+{% extends "base.html" %}
+
+{% block title %}Students - Semantic Grader{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-user-graduate me-2"></i>Students Management</h2>
+        <p class="lead">Add, import, and manage student data for evaluations.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Add Student</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="roll_number" class="form-label">Roll Number</label>
+                        <input type="text" class="form-control" id="roll_number" name="roll_number" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="batch" class="form-label">Batch</label>
+                        <input type="text" class="form-control" id="batch" name="batch" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-import me-2"></i>Import Students</h5>
+            </div>
+            <div class="card-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">CSV or Excel File</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".csv, .xlsx" required>
+                        <div class="form-text">
+                            File must have columns: roll_number, name, email, batch
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success" id="importBtn">
+                            <i class="fas fa-upload me-2"></i>Import Students
+                        </button>
+                    </div>
+                </form>
+                <div id="importResult" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Student List</h5>
+                <div class="input-group input-group-sm" style="width: 200px;">
+                    <input type="text" class="form-control" id="studentSearch" placeholder="Search students...">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if students %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Roll Number</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Batch</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>{{ student.roll_number }}</td>
+                                <td>{{ student.name }}</td>
+                                <td>{{ student.email }}</td>
+                                <td>{{ student.batch }}</td>
+                                <td>
+                                    <a href="{{ url_for('evaluation') }}?student_id={{ student.id }}" class="btn btn-sm btn-outline-primary" title="Evaluate">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-user-graduate fa-4x text-muted"></i>
+                    </div>
+                    <p>No students added yet. Add students individually or import from a file.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_js %}
+<script>
+    document.getElementById('importForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const importBtn = document.getElementById('importBtn');
+        const importResult = document.getElementById('importResult');
+        
+        importBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Importing...';
+        importBtn.disabled = true;
+        
+        fetch('{{ url_for("import_students") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                importResult.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                importResult.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            }
+        })
+        .catch(error => {
+            importResult.innerHTML = '<div class="alert alert-danger">An error occurred during import.</div>';
+        })
+        .finally(() => {
+            importBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Import Students';
+            importBtn.disabled = false;
+        });
+    });
+    
+    document.getElementById('studentSearch').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const table = document.getElementById('studentsTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let row of rows) {
+            const cells = row.getElementsByTagName('td');
+            let found = false;
+            
+            for (let i = 0; i < cells.length - 1; i++) {
+                const cellText = cells[i].textContent.toLowerCase();
+                if (cellText.includes(searchText)) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            row.style.display = found ? '' : 'none';
+        }
+    });
+</script>
+{% endblock %}
+```

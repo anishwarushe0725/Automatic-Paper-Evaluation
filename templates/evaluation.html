@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluation - Semantic Grader{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-check-square me-2"></i>Student Evaluation</h2>
+        <p class="lead">Upload and evaluate student answer papers against model answers.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Evaluate Answer Paper</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="question_paper_id" class="form-label">Question Paper</label>
+                        <select class="form-select" id="question_paper_id" name="question_paper_id" required>
+                            <option value="">Select Question Paper</option>
+                            {% for paper in question_papers %}
+                            <option value="{{ paper.id }}" data-total-marks="{{ paper.total_marks }}">
+                                {{ paper.title }} ({{ paper.total_marks }} marks)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text" id="paperDetails"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="student_id" class="form-label">Student</label>
+                        <select class="form-select" id="student_id" name="student_id" required>
+                            <option value="">Select Student</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">
+                                {{ student.roll_number }} - {{ student.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="answer_file" class="form-label">Student Answer File (PDF)</label>
+                        <input type="file" class="form-control" id="answer_file" name="answer_file" accept=".pdf" required>
+                        <div class="form-text">Upload the student's answer paper in PDF format.</div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Evaluation Process</h6>
+                        <p class="mb-0">The system will:</p>
+                        <ol class="mb-0">
+                            <li>Extract text from the student's answer paper</li>
+                            <li>Compare responses with the model answers semantically</li>
+                            <li>Assign marks based on semantic similarity</li>
+                            <li>Generate feedback for each answer</li>
+                        </ol>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="evaluateBtn">
+                            <i class="fas fa-check-circle me-2"></i>Evaluate Answer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-import me-2"></i>Batch Evaluation</h5>
+            </div>
+            <div class="card-body">
+                <p>Need to evaluate multiple papers at once?</p>
+                <a href="{{ url_for('batch_evaluation') }}" class="btn btn-success">
+                    <i class="fas fa-layer-group me-2"></i>Go to Batch Evaluation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_js %}
+<script>
+    // Show question paper details when selected
+    document.getElementById('question_paper_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const paperDetails = document.getElementById('paperDetails');
+        
+        if (this.value) {
+            const totalMarks = selectedOption.getAttribute('data-total-marks');
+            paperDetails.innerHTML = `<span class="text-success">Total marks: ${totalMarks}</span>`;
+        } else {
+            paperDetails.innerHTML = '';
+        }
+    });
+    
+    // Show loading indicator when form is submitted
+    document.querySelector('form').addEventListener('submit', function() {
+        const btn = document.getElementById('evaluateBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Evaluating...';
+        btn.disabled = true;
+    });
+    
+    // Pre-select student or question paper if provided in URL parameters
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('student_id');
+        const paperId = urlParams.get('question_paper_id');
+        
+        if (studentId) {
+            document.getElementById('student_id').value = studentId;
+        }
+        
+        if (paperId) {
+            document.getElementById('question_paper_id').value = paperId;
+            // Trigger change event to update paper details
+            document.getElementById('question_paper_id').dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}
