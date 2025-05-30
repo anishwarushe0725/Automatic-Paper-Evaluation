@@ -94,19 +94,19 @@ body {
 
 /* Dashboard Cards */
 .bg-primary {
-  background-color: var(--primary-color) !important;
+  background: linear-gradient(135deg, #061e8c, #096cfb);
 }
 
 .bg-success {
-  background-color: var(--success-color) !important;
+  background: linear-gradient(135deg, #04532f, #00ff88);
 }
 
 .bg-info {
-  background-color: var(--info-color) !important;
+  background: linear-gradient(135deg, #061e8c, #096cfb);
 }
 
 .bg-warning {
-  background-color: var(--warning-color) !important;
+  background:linear-gradient(135deg, #ffa504 0%, #ffe297 100%);
 }
 
 .bg-danger {
