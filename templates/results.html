@@ -1,304 +1,49 @@
-{% extends "base.html" %}
 
-{% block title %}Results - Semantic Grader{% endblock %}
-
-{% block additional_css %}
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
-{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h2><i class="fas fa-chart-bar me-2"></i>Evaluation Results</h2>
-        <p class="lead">View and analyze student evaluation results.</p>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>All Evaluations</h5>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-light" id="exportCSV">
-                        <i class="fas fa-file-csv me-1"></i> Export CSV
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                {% if evaluations %}
-                <div class="table-responsive">
-                    <table class="table table-hover" id="resultsTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Student</th>
-                                <th>Question Paper</th>
-                                <th>Marks</th>
-                                <th>Percentage</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for eval in evaluations %}
-                            <tr>
-                                <td>{{ eval.id }}</td>
-                                <td>{{ eval.student.roll_number }} - {{ eval.student.name }}</td>
-                                <td>{{ eval.question_paper.title }}</td>
-                                <td>{{ eval.marks_obtained }}/{{ eval.question_paper.total_marks }}</td>
-                                <td>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar 
-                                            {% if eval.percentage >= 75 %}bg-success
-                                            {% elif eval.percentage >= 60 %}bg-info
-                                            {% elif eval.percentage >= 40 %}bg-warning
-                                            {% else %}bg-danger{% endif %}" 
-                                            role="progressbar" 
-                                            style="width: {{ eval.percentage }}%;" 
-                                            aria-valuenow="{{ eval.percentage }}" 
-                                            aria-valuemin="0" 
-                                            aria-valuemax="100">
-                                            {{ eval.percentage|round(1) }}%
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ eval.evaluated_at.strftime('%Y-%m-%d') }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-info viewFeedback" data-id="{{ eval.id }}" data-feedback="{{ eval.feedback }}" title="View Feedback">
-                                        <i class="fas fa-comment-dots"></i>
-                                    </button>
-                                    <a href="{{ url_for('download_file', file_type='student_answer', id=eval.id) }}" class="btn btn-sm btn-outline-primary" title="Download Answer">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <div class="mb-3">
-                        <i class="fas fa-clipboard-list fa-4x text-muted"></i>
-                    </div>
-                    <p>No evaluations have been performed yet.</p>
-                    <a href="{{ url_for('evaluation') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i> Start Evaluation
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Performance Analysis</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="performanceChart" height="250"></canvas>
-            </div>
-        </div>
-    </div>
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Evaluation Results</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Results</li>
+    </ol>
     
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Performers</h5>
-            </div>
-            <div class="card-body">
-                {% if evaluations %}
-                <div class="table-responsive">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Student</th>
-                                <th>Score</th>
-                                <th>Paper</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% set sorted_evals = evaluations|sort(attribute='percentage', reverse=True) %}
-                            {% for eval in sorted_evals %}
-                                {% if loop.index <= 5 %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ eval.student.name }}</td>
-                                    <td>{{ eval.percentage|round(1) }}%</td>
-                                    <td>{{ eval.question_paper.title|truncate(20) }}</td>
-                                </tr>
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p class="text-center py-3">No evaluation data available.</p>
-                {% endif %}
-            </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Evaluation Results
         </div>
-    </div>
-</div>
-
-<!-- Feedback Modal -->
-<div class="modal fade" id="feedbackModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="fas fa-comment-dots me-2"></i>Evaluation Feedback</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="feedbackContent"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Question Paper</th>
+                        <th>Marks</th>
+                        <th>Percentage</th>
+                        <th>Evaluated On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eval in evaluations %}
+                    <tr>
+                        <td>{{ eval.student.name }}</td>
+                        <td>{{ eval.question_paper.title }}</td>
+                        <td>{{ eval.marks_obtained }}/{{ eval.question_paper.total_marks }}</td>
+                        <td>{{ "%.2f"|format(eval.percentage) }}%</td>
+                        <td>{{ eval.evaluated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('evaluation_details', evaluation_id=eval.id) }}" class="btn btn-primary btn-sm">View Details</a>
+                            <a href="{{ url_for('download_file', file_type='student_answer', id=eval.id) }}" class="btn btn-secondary btn-sm">Download Answer</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block additional_js %}
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-    $(document).ready(function() {
-        // Initialize DataTable
-        const table = $('#resultsTable').DataTable({
-            order: [[5, 'desc']],
-            pageLength: 10,
-            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
-        });
-        
-        // Handle feedback modal
-        $('.viewFeedback').click(function() {
-            const feedback = $(this).data('feedback');
-            const feedbackItems = feedback.split(', ');
-            let content = '<ul class="list-group">';
-            
-            feedbackItems.forEach(item => {
-                content += `<li class="list-group-item">${item}</li>`;
-            });
-            
-            content += '</ul>';
-            
-            $('#feedbackContent').html(content);
-            const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
-            feedbackModal.show();
-        });
-        
-        // Export to CSV functionality
-        $('#exportCSV').click(function() {
-            const headers = ['ID', 'Student', 'Question Paper', 'Marks', 'Percentage', 'Date'];
-            const rows = [];
-            
-            // Get table data
-            $('#resultsTable tbody tr').each(function() {
-                const row = [];
-                $(this).find('td').each(function(index) {
-                    if (index < 6) { // Skip the actions column
-                        let text = $(this).text().trim();
-                        if (index === 4) { // Handle percentage column with progress bar
-                            text = $(this).find('.progress-bar').text().trim();
-                        }
-                        row.push(text);
-                    }
-                });
-                rows.push(row);
-            });
-            
-            // Create CSV content
-            let csvContent = headers.join(',') + '\n';
-            rows.forEach(row => {
-                csvContent += row.join(',') + '\n';
-            });
-            
-            // Create and trigger download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'evaluation_results.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-        
-        // Performance chart
-        {% if evaluations %}
-        const ctx = document.getElementById('performanceChart').getContext('2d');
-        
-        // Count evaluations in different grade ranges
-        const gradeRanges = {
-            'Excellent (75-100%)': 0,
-            'Good (60-74%)': 0,
-            'Average (40-59%)': 0,
-            'Poor (0-39%)': 0
-        };
-        
-        {% for eval in evaluations %}
-        if ({{ eval.percentage }} >= 75) {
-            gradeRanges['Excellent (75-100%)']++;
-        } else if ({{ eval.percentage }} >= 60) {
-            gradeRanges['Good (60-74%)']++;
-        } else if ({{ eval.percentage }} >= 40) {
-            gradeRanges['Average (40-59%)']++;
-        } else {
-            gradeRanges['Poor (0-39%)']++;
-        }
-        {% endfor %}
-        
-        const performanceChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: Object.keys(gradeRanges),
-                datasets: [{
-                    data: Object.values(gradeRanges),
-                    backgroundColor: [
-                        'rgba(52, 191, 73, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(255, 99, 132, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(52, 191, 73, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(255, 99, 132, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        {% endif %}
-    });
-</script>
-{% endblock %}

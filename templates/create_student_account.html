@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Student Account{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">Create Student Account</h1>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Create New Student Account</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('create_student_account', student_id=student.id) if student else url_for('create_student_account', student_id=0) }}">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    {% if student %}
+                    Creating account for student: <strong>{{ student.name }} ({{ student.roll_number }})</strong>
+                    {% else %}
+                    Select a student to create an account for
+                    {% endif %}
+                </div>
+                
+                {% if not student %}
+                <div class="mb-3">
+                    <label for="student_select" class="form-label">Select Student</label>
+                    <select class="form-select" id="student_select" name="student_id" required>
+                        <option value="">-- Select a student --</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}">{{ student.roll_number }} - {{ student.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">student_</span>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               value="{{ student.roll_number if student else '' }}" 
+                               {% if student %}readonly{% endif %} required>
+                    </div>
+                    <div class="form-text">Default username format: student_ROLLNUMBER</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="form-text">Default password is the same as the username if left blank</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="send_email" name="send_email">
+                    <label class="form-check-label" for="send_email">
+                        Send email with login credentials to student
+                    </label>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('manage_student_accounts') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Auto-generate username when student is selected
+        $('#student_select').change(function() {
+            var studentId = $(this).val();
+            if (studentId) {
+                // You would need an API endpoint to get student details, this is just a placeholder
+                // In a real implementation, you would use AJAX to fetch the student's roll number
+                $.get('/api/student/' + studentId, function(data) {
+                    $('#username').val(data.roll_number);
+                });
+            } else {
+                $('#username').val('');
+            }
+        });
+        
+        // Password validation
+        $('form').submit(function(e) {
+            var password = $('#password').val();
+            var confirmPassword = $('#confirm_password').val();
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+            
+            return true;
+        });
+    });
+</script>
+{% endblock %}

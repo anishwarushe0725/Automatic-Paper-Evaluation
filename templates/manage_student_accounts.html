@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Student Accounts{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">Manage Student Accounts</h1>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Students</h5>
+            <a href="{{ url_for('students') }}" class="btn btn-sm btn-primary">Add New Student</a>
+        </div>
+        <div class="card-body">
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Batch</th>
+                            <th>Account Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td>{{ student.roll_number }}</td>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>{{ student.batch }}</td>
+                            <td>
+                                {% if student.has_account %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-warning">No Account</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not student.has_account %}
+                                <form action="{{ url_for('create_student_account', student_id=student.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        Create Account
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('delete_student_account', student_id=student.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this student account?')">
+                                        Delete Account
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No students found. Please <a href="{{ url_for('students') }}">add students</a> first.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Bulk Account Management</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Click the "Create All Accounts" button to create accounts for all students who don't have one yet. Default password will be "student_" followed by their roll number.
+            </div>
+            
+            <form action="{{ url_for('create_student_account', student_id=0) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Create accounts for all students without one? Default password will be student_ROLLNUMBER')">
+                    <i class="fas fa-user-plus"></i> Create All Missing Accounts
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Instructions Modal -->
+<div class="modal fade" id="instructionsModal" tabindex="-1" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="instructionsModalLabel">Student Account Instructions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Here's how to manage student accounts:</p>
+                <ul>
+                    <li>Each student needs a user account to access their results online</li>
+                    <li>The default username will be "student_" followed by their roll number</li>
+                    <li>The default password will be the same as the username</li>
+                    <li>Students can change their password after logging in</li>
+                    <li>Student accounts only have access to their own results and evaluations</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Auto-show instructions modal for first-time users (you can add logic to determine first-time users)
+        // $('#instructionsModal').modal('show');
+        
+        // Initialize DataTable for better table functionality
+        $('.table').DataTable({
+            responsive: true,
+            order: [[0, 'asc']], // Sort by roll number ascending
+            pageLength: 10
+        });
+    });
+</script>
+{% endblock %}

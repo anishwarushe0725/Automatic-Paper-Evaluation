@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Semantic Grader{% endblock %}</title>
+    <title>{% block title %}Semantica Pro{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -14,7 +14,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-graduation-cap me-2"></i>Semantic Grader
+                <i class="fas fa-graduation-cap me-2"></i>Semantica Pro
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -27,8 +27,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('create_question_paper') %}active{% endif %}" href="{{ url_for('create_question_paper') }}">
+                            <i class="fas fa-file-alt me-1"></i> Create Question Paper
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.path == url_for('upload_questions') %}active{% endif %}" href="{{ url_for('upload_questions') }}">
-                            <i class="fas fa-file-upload me-1"></i> Upload Questions
+                            <i class="fas fa-file-upload me-1"></i> Upload Question Paper
                         </a>
                     </li>
                     <li class="nav-item">
@@ -47,6 +52,24 @@
                         </a>
                     </li>
                 </ul>
+                
+                <!-- Search Icon Only -->
+                <div class="nav-item dropdown me-3">
+                    <a class="nav-link" href="#" id="searchDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-search"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px; padding: 0rem !important;">
+                        <form action="{{ url_for('search') }}" method="GET">
+                            <div class="input-group">
+                                <input class="form-control" type="search" placeholder="Search students or pages..." name="q" aria-label="Search">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">

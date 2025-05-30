@@ -1,0 +1,115 @@
+{% extends 'student_base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Student Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Dashboard</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user me-1"></i>
+                    Student Information
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Name:</th>
+                            <td>{{ student.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Roll Number:</th>
+                            <td>{{ student.roll_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ student.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Batch:</th>
+                            <td>{{ student.batch }}</td>
+                        </tr>
+                        <tr>
+                            <th>Apaar ID:</th>
+                            <td>{{ student.aadhar_id }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Performance Summary
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 text-center">
+                            <h4>Total Evaluations</h4>
+                            <p class="display-4">{{ evaluations|length }}</p>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <h4>Average Score</h4>
+                            {% if evaluations %}
+                                {% set total_percentage = 0 %}
+                                {% for eval in evaluations %}
+                                    {% set total_percentage = total_percentage + eval.percentage %}
+                                {% endfor %}
+                                <p class="display-4">{{ "%.2f"|format(total_percentage / evaluations|length) }}%</p>
+                            {% else %}
+                                <p class="display-4">N/A</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Recent Evaluations
+        </div>
+        <div class="card-body">
+            {% if evaluations %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Question Paper</th>
+                            <th>Marks</th>
+                            <th>Percentage</th>
+                            <th>Evaluated On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluations[:5] %}
+                        <tr>
+                            <td>{{ eval.question_paper.title }}</td>
+                            <td>{{ eval.marks_obtained }}/{{ eval.question_paper.total_marks }}</td>
+                            <td>{{ "%.2f"|format(eval.percentage) }}%</td>
+                            <td>{{ eval.evaluated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('student_evaluation_details', evaluation_id=eval.id) }}" class="btn btn-primary btn-sm">View Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if evaluations|length > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('student_results') }}" class="btn btn-primary">View All Results</a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">No evaluations available.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,6 +7,23 @@
     .admin-actions {
         white-space: nowrap;
     }
+    .profile-photo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .profile-photo-lg {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 15px;
+    }
+    .photo-preview {
+        text-align: center;
+        margin-bottom: 15px;
+    }
 </style>
 {% endblock %}
 
@@ -26,7 +43,7 @@
                 <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Add New Admin</h5>
             </div>
             <div class="card-body">
-                <form action="{{ url_for('admin_add') }}" method="post">
+                <form action="{{ url_for('admin_add') }}" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
                         <input type="text" class="form-control" id="username" name="username" required>
@@ -38,6 +55,11 @@
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile_photo" class="form-label">Profile Photo</label>
+                        <input type="file" class="form-control" id="profile_photo" name="profile_photo" accept="image/*" onchange="previewImage(this, 'photo-preview-add')">
+                        <div id="photo-preview-add" class="photo-preview mt-2"></div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-save me-2"></i>Add Admin
@@ -59,6 +81,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>Photo</th>
                                 <th>Username</th>
                                 <th>Email</th>
                                 <th>Actions</th>
@@ -67,6 +90,13 @@
                         <tbody>
                             {% for admin in admins %}
                             <tr>
+                                <td>
+                                    {% if admin.profile_photo %}
+                                    <img src="{{ url_for('static', filename='img/default-profile.png') }}" class="profile-photo" alt="{{ admin.username }}">
+                                    {% else %}
+                                    <img src="{{ url_for('static', filename='img/default-profile.png') }}" class="profile-photo" alt="{{ admin.username }}">
+                                    {% endif %}
+                                </td>
                                 <td>{{ admin.username }}</td>
                                 <td>{{ admin.email }}</td>
                                 <td class="admin-actions">
@@ -74,6 +104,7 @@
                                             data-id="{{ admin.id }}"
                                             data-username="{{ admin.username }}"
                                             data-email="{{ admin.email }}"
+                                            data-photo="{{ admin.profile_photo }}"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#editAdminModal">
                                         <i class="fas fa-edit"></i>
@@ -109,8 +140,11 @@
                 <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Edit Admin</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editAdminForm" action="" method="post">
+            <form id="editAdminForm" action="" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
+                    <div class="photo-preview">
+                        <img id="current-photo" src="{{ url_for('static', filename='img/default-profile.png') }}" class="profile-photo-lg" alt="Admin Photo">
+                    </div>
                     <div class="mb-3">
                         <label for="edit-username" class="form-label">Username</label>
                         <input type="text" class="form-control" id="edit-username" name="username" required>
@@ -122,6 +156,11 @@
                     <div class="mb-3">
                         <label for="edit-password" class="form-label">New Password (leave blank to keep current)</label>
                         <input type="password" class="form-control" id="edit-password" name="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-profile-photo" class="form-label">Profile Photo (leave blank to keep current)</label>
+                        <input type="file" class="form-control" id="edit-profile-photo" name="profile_photo" accept="image/*" onchange="previewImage(this, 'photo-preview-edit')">
+                        <div id="photo-preview-edit" class="photo-preview mt-2"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -144,14 +183,42 @@
                 const id = this.getAttribute('data-id');
                 const username = this.getAttribute('data-username');
                 const email = this.getAttribute('data-email');
+                const photo = this.getAttribute('data-photo');
                 
                 document.getElementById('edit-username').value = username;
                 document.getElementById('edit-email').value = email;
                 document.getElementById('edit-password').value = '';
                 
+                // Set photo preview
+                const currentPhoto = document.getElementById('current-photo');
+                if (photo) {
+                    currentPhoto.src = "{{ url_for('uploaded_file', filename='') }}" + photo;
+                } else {
+                    currentPhoto.src = "{{ url_for('static', filename='img/default-profile.png') }}";
+                }
+                
                 document.getElementById('editAdminForm').action = '/admin/edit/' + id;
             });
         });
     });
+    
+    // Image preview function
+    function previewImage(input, previewId) {
+        const preview = document.getElementById(previewId);
+        preview.innerHTML = '';
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'profile-photo-lg';
+                preview.appendChild(img);
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 </script>
 {% endblock %}

@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Evaluation - Semantic Grader{% endblock %}
+
+{% block additional_css %}
+<style>
+    .dropzone {
+        border: 2px dashed #4CAF50;
+        border-radius: 10px;
+        padding: 40px 20px;
+        text-align: center;
+        background-color: #f9f9f9;
+        margin-bottom: 20px;
+        transition: background-color 0.3s;
+    }
+    
+    .dropzone.highlight {
+        background-color: #e8f5e9;
+    }
+    
+    .file-list {
+        margin-top: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .file-item:last-child {
+        border-bottom: none;
+    }
+    
+    .file-item .file-name {
+        flex-grow: 1;
+        margin-left: 10px;
+    }
+    
+    .file-item .file-remove {
+        color: #dc3545;
+        cursor: pointer;
+    }
+    
+    .roll-number-badge {
+        background-color: #4CAF50;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+    }
+    
+    .form-instructions {
+        margin-bottom: 20px;
+        background-color: #e8f5e9;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #4CAF50;
+    }
+    
+    #progress-container {
+        display: none;
+        margin-top: 20px;
+    }
+    
+    .student-match-status {
+        display: flex;
+        align-items: center;
+        margin-top: 5px;
+    }
+    
+    .match-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .match-success {
+        background-color: #4CAF50;
+    }
+    
+    .match-warning {
+        background-color: #FFC107;
+    }
+    
+    .match-error {
+        background-color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-tasks me-2"></i>Batch Evaluation</h2>
+        <p class="text-muted">Upload multiple student answer PDFs for batch evaluation.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-file-upload me-2"></i>Upload Answer Files</h5>
+    </div>
+    <div class="card-body">
+        <div class="form-instructions">
+            <p><i class="fas fa-info-circle me-2"></i><strong>Important:</strong> File names should include student roll numbers (e.g., <code>CS101_answers.pdf</code> for roll number CS101). Files will be matched with students based on roll numbers found in file names.</p>
+        </div>
+
+        <form id="batchEvaluationForm" method="POST" action="{{ url_for('batch_evaluation') }}" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="question_paper_id" class="form-label">Select Question Paper</label>
+                <select class="form-select" id="question_paper_id" name="question_paper_id" required>
+                    <option value="">-- Select Question Paper --</option>
+                    {% for paper in question_papers %}
+                    <option value="{{ paper.id }}">{{ paper.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Upload Student Answer Files</label>
+                <div id="dropzone" class="dropzone">
+                    <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted"></i>
+                    <h5>Drag & Drop Files Here</h5>
+                    <p>Or click to browse</p>
+                    <input type="file" id="fileInput" name="answer_files" multiple accept=".pdf" class="d-none">
+                </div>
+                
+                <div id="fileList" class="file-list d-none">
+                    <h6 class="mb-3">Uploaded Files: <span id="fileCount">0</span></h6>
+                    <div id="fileItemContainer"></div>
+                </div>
+            </div>
+            
+            <div id="studentMatchSummary" class="mb-3 d-none">
+                <h6>Student Matching Status:</h6>
+                <div class="student-match-status">
+                    <div class="match-indicator match-success"></div>
+                    <span id="matchedCount">0</span> files matched with students
+                </div>
+                <div class="student-match-status">
+                    <div class="match-indicator match-warning"></div>
+                    <span id="possibleMatchCount">0</span> files with possible matches
+                </div>
+                <div class="student-match-status">
+                    <div class="match-indicator match-error"></div>
+                    <span id="unmatchedCount">0</span> files with no student match
+                </div>
+            </div>
+
+            <div id="progress-container">
+                <div class="progress mb-2">
+                    <div id="evaluation-progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="progress-status" class="text-center">Processing files...</p>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" disabled>
+                    <i class="fas fa-check-circle me-2"></i>Start Batch Evaluation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_js %}
+<script>
+    // File collection and variables
+    const files = new DataTransfer();
+    let studentRollNumbers = [];
+
+    // DOM elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const fileItemContainer = document.getElementById('fileItemContainer');
+    const fileCount = document.getElementById('fileCount');
+    const submitBtn = document.getElementById('submitBtn');
+    const studentMatchSummary = document.getElementById('studentMatchSummary');
+    const matchedCount = document.getElementById('matchedCount');
+    const possibleMatchCount = document.getElementById('possibleMatchCount');
+    const unmatchedCount = document.getElementById('unmatchedCount');
+    
+    // Load student roll numbers from database
+    function loadStudentRollNumbers() {
+        fetch('/api/students/roll_numbers')
+            .then(response => response.json())
+            .then(data => {
+                studentRollNumbers = data.roll_numbers;
+                console.log('Loaded student roll numbers:', studentRollNumbers);
+            })
+            .catch(error => {
+                console.error('Error loading student roll numbers:', error);
+                // Use dummy data if API fails
+                studentRollNumbers = [
+                    {% for student in students %}
+                    "{{ student.roll_number }}",
+                    {% endfor %}
+                ];
+            });
+    }
+
+    // Extract roll number from filename
+    function extractRollNumber(filename) {
+        // Remove file extension and any path
+        const nameOnly = filename.split('.')[0].split(/[\\/]/).pop();
+        
+        // Try to match common patterns for roll numbers
+        // Pattern 1: Roll number as the entire filename (e.g., "CS101.pdf")
+        if (studentRollNumbers.includes(nameOnly)) {
+            return { rollNumber: nameOnly, matchType: 'exact' };
+        }
+        
+        // Pattern 2: Roll number with prefix/suffix (e.g., "answers_CS101.pdf", "CS101_exam.pdf")
+        const rollNumberMatches = studentRollNumbers.filter(roll => nameOnly.includes(roll));
+        if (rollNumberMatches.length === 1) {
+            return { rollNumber: rollNumberMatches[0], matchType: 'contained' };
+        } else if (rollNumberMatches.length > 1) {
+            // Find the longest match if multiple matches (more specific)
+            const longestMatch = rollNumberMatches.reduce((a, b) => a.length > b.length ? a : b);
+            return { rollNumber: longestMatch, matchType: 'multiple' };
+        }
+        
+        // No match found
+        return { rollNumber: null, matchType: 'none' };
+    }
+
+    // Update the student match summary
+    function updateMatchSummary() {
+        let matched = 0;
+        let possibleMatch = 0;
+        let unmatched = 0;
+        
+        for (let i = 0; i < files.files.length; i++) {
+            const { matchType } = extractRollNumber(files.files[i].name);
+            if (matchType === 'exact') matched++;
+            else if (matchType === 'contained' || matchType === 'multiple') possibleMatch++;
+            else unmatched++;
+        }
+        
+        matchedCount.textContent = matched;
+        possibleMatchCount.textContent = possibleMatch;
+        unmatchedCount.textContent = unmatched;
+        
+        if (files.files.length > 0) {
+            studentMatchSummary.classList.remove('d-none');
+        } else {
+            studentMatchSummary.classList.add('d-none');
+        }
+    }
+
+    // Add file to list
+    function addFileToList(file) {
+        const { rollNumber, matchType } = extractRollNumber(file.name);
+        
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        // Icon based on match type
+        let statusIcon, statusClass;
+        if (matchType === 'exact') {
+            statusIcon = 'check-circle';
+            statusClass = 'text-success';
+        } else if (matchType === 'contained' || matchType === 'multiple') {
+            statusIcon = 'exclamation-triangle';
+            statusClass = 'text-warning';
+        } else {
+            statusIcon = 'times-circle';
+            statusClass = 'text-danger';
+        }
+        
+        fileItem.innerHTML = `
+            <i class="fas fa-file-pdf"></i>
+            <span class="file-name">${file.name}</span>
+            ${rollNumber ? `<span class="roll-number-badge">${rollNumber}</span>` : ''}
+            <i class="fas fa-${statusIcon} ${statusClass} me-2"></i>
+            <i class="fas fa-times file-remove"></i>
+        `;
+        
+        fileItem.querySelector('.file-remove').addEventListener('click', function() {
+            removeFile(file.name);
+        });
+        
+        fileItemContainer.appendChild(fileItem);
+    }
+
+    // Remove file from list
+    function removeFile(fileName) {
+        const dt = new DataTransfer();
+        
+        for (let i = 0; i < files.files.length; i++) {
+            const file = files.files[i];
+            if (file.name !== fileName) {
+                dt.items.add(file);
+            }
+        }
+        
+        fileInput.files = dt.files;
+        files.clearData();
+        
+        for (let i = 0; i < dt.files.length; i++) {
+            files.items.add(dt.files[i]);
+        }
+        
+        // Update UI
+        fileItemContainer.innerHTML = '';
+        for (let i = 0; i < files.files.length; i++) {
+            addFileToList(files.files[i]);
+        }
+        
+        fileCount.textContent = files.files.length;
+        
+        if (files.files.length === 0) {
+            fileList.classList.add('d-none');
+            submitBtn.disabled = true;
+        } else {
+            submitBtn.disabled = false;
+        }
+        
+        updateMatchSummary();
+    }
+
+    // Handle file upload
+    function handleFiles(uploadedFiles) {
+        if (uploadedFiles.length === 0) return;
+        
+        for (let i = 0; i < uploadedFiles.length; i++) {
+            const file = uploadedFiles[i];
+            
+            // Check if file is PDF
+            if (file.type !== 'application/pdf') {
+                alert(`File "${file.name}" is not a PDF file.`);
+                continue;
+            }
+            
+            // Check if file already exists
+            let fileExists = false;
+            for (let j = 0; j < files.files.length; j++) {
+                if (files.files[j].name === file.name) {
+                    fileExists = true;
+                    break;
+                }
+            }
+            
+            if (!fileExists) {
+                files.items.add(file);
+                addFileToList(file);
+            }
+        }
+        
+        fileInput.files = files.files;
+        fileCount.textContent = files.files.length;
+        
+        if (files.files.length > 0) {
+            fileList.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
+        
+        updateMatchSummary();
+    }
+
+    // Event listeners
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('highlight');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('highlight');
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('highlight');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    document.getElementById('batchEvaluationForm').addEventListener('submit', function(e) {
+        if (files.files.length === 0) {
+            e.preventDefault();
+            alert('Please upload at least one PDF file for evaluation.');
+            return false;
+        }
+        
+        // Show progress container
+        document.getElementById('progress-container').style.display = 'block';
+        submitBtn.disabled = true;
+        
+        // Simulate progress (in a real app, you would use AJAX for actual progress)
+        let progress = 0;
+        const progressBar = document.getElementById('evaluation-progress');
+        const progressStatus = document.getElementById('progress-status');
+        
+        const interval = setInterval(() => {
+            progress += Math.random() * 10;
+            if (progress > 100) progress = 100;
+            
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+            
+            if (progress < 30) {
+                progressStatus.textContent = 'Uploading files...';
+            } else if (progress < 60) {
+                progressStatus.textContent = 'Processing student answers...';
+            } else if (progress < 90) {
+                progressStatus.textContent = 'Grading responses...';
+            } else {
+                progressStatus.textContent = 'Finalizing results...';
+            }
+            
+            if (progress === 100) {
+                clearInterval(interval);
+            }
+        }, 500);
+    });
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStudentRollNumbers();
+    });
+</script>
+{% endblock %}

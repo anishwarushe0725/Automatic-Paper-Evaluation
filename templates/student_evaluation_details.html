@@ -1,0 +1,167 @@
+<!-- NEW: evaluation_details.html - For showing detailed question-by-question results -->
+{% extends 'student_base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Evaluation Details</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('results') }}">Results</a></li>
+        <li class="breadcrumb-item active">Details</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Overall Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Student Information</h5>
+                            <p><strong>Name:</strong> {{ student.name }}</p>
+                            <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
+                            <p><strong>Email:</strong> {{ student.email }}</p>
+                            <p><strong>Batch:</strong> {{ student.batch }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Examination Information</h5>
+                            <p><strong>Question Paper:</strong> {{ question_paper.title }}</p>
+                            <p><strong>Description:</strong> {{ question_paper.description }}</p>
+                            <p><strong>Total Marks:</strong> {{ question_paper.total_marks }}</p>
+                            <p><strong>Created On:</strong> {{ question_paper.created_at.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <h5>Evaluation Summary</h5>
+                            <div class="progress mb-2" style="height: 30px;">
+                                <div class="progress-bar bg-{{ 'success' if evaluation.percentage >= 60 else 'warning' if evaluation.percentage >= 40 else 'danger' }}" 
+                                     role="progressbar" 
+                                     style="width: {{ evaluation.percentage }}%;" 
+                                     aria-valuenow="{{ evaluation.percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ "%.2f"|format(evaluation.percentage) }}%
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card text-white bg-primary mb-3">
+                                        <div class="card-header">Marks Obtained</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ evaluation.marks_obtained }}/{{ question_paper.total_marks }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-white bg-success mb-3">
+                                        <div class="card-header">Percentage</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ "%.2f"|format(evaluation.percentage) }}%</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card text-white bg-info mb-3">
+                                        <div class="card-header">Evaluated On</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ evaluation.evaluated_at.strftime('%Y-%m-%d %H:%M') }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-list-ol me-1"></i>
+            Question-by-Question Analysis
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="questionAccordion">
+                {% for result in evaluation.question_results %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button {{ 'collapsed' if loop.index > 1 else '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="{{ 'true' if loop.index == 1 else 'false' }}" aria-controls="collapse{{ loop.index }}">
+                            Question {{ loop.index }} - {{ result.marks_obtained }}/{{ result.max_marks }} marks ({{ "%.2f"|format(result.marks_obtained/result.max_marks*100) }}%)
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {{ 'show' if loop.index == 1 else '' }}" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#questionAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">Question Text</div>
+                                        <div class="card-body">
+                                            <p>{{ result.question_text }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">Student's Answer</div>
+                                        <div class="card-body">
+                                            <p>{{ result.student_answer }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">Model Answer</div>
+                                        <div class="card-body">
+                                            <p>{{ result.model_answer }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">Feedback</div>
+                                        <div class="card-body">
+                                            <p>{{ result.feedback }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar bg-{{ 'success' if result.marks_obtained/result.max_marks >= 0.6 else 'warning' if result.marks_obtained/result.max_marks >= 0.4 else 'danger' }}" 
+                                             role="progressbar" 
+                                             style="width: {{ result.marks_obtained/result.max_marks*100 }}%;" 
+                                             aria-valuenow="{{ result.marks_obtained }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="{{ result.max_marks }}">
+                                            {{ result.marks_obtained }}/{{ result.max_marks }} marks
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <a href="{{ url_for('results') }}" class="btn btn-secondary">Back to Results</a>
+            <a href="{{ url_for('download_file', file_type='student_answer', id=evaluation.id) }}" class="btn btn-primary">Download Student Answer</a>
+            <a href="{{ url_for('download_file', file_type='model_answer', id=question_paper.id) }}" class="btn btn-info">Download Model Answer</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

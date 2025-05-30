@@ -1,0 +1,49 @@
+{% extends 'student_base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">My Evaluation Results</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('student_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Results</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            My Results
+        </div>
+        <div class="card-body">
+            {% if evaluations %}
+                <table id="datatablesSimple" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Question Paper</th>
+                            <th>Marks</th>
+                            <th>Percentage</th>
+                            <th>Evaluated On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluations %}
+                        <tr>
+                            <td>{{ eval.question_paper.title }}</td>
+                            <td>{{ eval.marks_obtained }}/{{ eval.question_paper.total_marks }}</td>
+                            <td>{{ "%.2f"|format(eval.percentage) }}%</td>
+                            <td>{{ eval.evaluated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('student_evaluation_details', evaluation_id=eval.id) }}" class="btn btn-primary btn-sm">View Details</a>
+                                <a href="{{ url_for('download_file', file_type='student_answer', id=eval.id) }}" class="btn btn-secondary btn-sm">Download My Answer</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info">No evaluations available.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

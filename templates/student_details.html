@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Student Details - {{ student.name }} - Semantica Pro{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('students') }}">Students</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ student.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0"><i class="fas fa-user-graduate me-2"></i>Student Information</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ student.name }}</p>
+                    <p><strong>Roll Number:</strong> {{ student.roll_number }}</p>
+                    <p><strong>Email:</strong> {{ student.email }}</p>
+                    <p><strong>Batch:</strong> {{ student.batch }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total Evaluations:</strong> {{ total_evaluations }}</p>
+                    <p><strong>Average Score:</strong> {{ avg_score|round(2) }}%</p>
+                    {% if student.user_account %}
+                    <p><strong>Account Status:</strong> <span class="badge bg-success">Active</span></p>
+                    {% else %}
+                    <p><strong>Account Status:</strong> <span class="badge bg-warning">No Account</span>
+                        <a href="{{ url_for('create_student_account', student_id=student.id) }}" class="btn btn-sm btn-primary ms-2" 
+                           onclick="return confirm('Create account for this student?');">
+                            <i class="fas fa-user-plus me-1"></i> Create Account
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0"><i class="fas fa-file-alt me-2"></i>Evaluation History</h4>
+        </div>
+        <div class="card-body">
+            {% if evaluations %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Question Paper</th>
+                            <th>Marks</th>
+                            <th>Percentage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluations %}
+                        <tr>
+                            <td>{{ eval.evaluated_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ eval.question_paper.title }}</td>
+                            <td>{{ eval.marks_obtained }} / {{ eval.question_paper.total_marks }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if eval.percentage < 40 %}bg-danger{% elif eval.percentage < 60 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" style="width: {{ eval.percentage }}%;" 
+                                         aria-valuenow="{{ eval.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ eval.percentage|round(2) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('evaluation_details', evaluation_id=eval.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye me-1"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> No evaluations found for this student.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
